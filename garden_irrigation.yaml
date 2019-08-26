@@ -7,6 +7,7 @@ automation:
 #=== Set next run time when schedule enabled or time changed
 #============================================================
   - alias: Set next run time
+    initial_state: true
     trigger:
       - platform: state
         entity_id:
@@ -21,15 +22,13 @@ automation:
       - service: input_datetime.set_datetime
         data_template:
           entity_id: >
-            {% if trigger.entity_id == 'input_boolean.cycle1_enable' or
-                  trigger.entity_id == 'input_select.cycle1_schedule_time' %}
+            {% if 'cycle1' in trigger.entity_id %}
               input_datetime.cycle1_next_run_time
             {% else %}
               input_datetime.cycle2_next_run_time
             {% endif %}
           date: >
-            {% if trigger.entity_id == 'input_boolean.cycle1_enable' or
-                  trigger.entity_id == 'input_select.cycle1_schedule_time' %}
+            {% if 'cycle1' in trigger.entity_id %}
               {% set time = states('input_select.cycle1_schedule_time') %}
             {% else %}
               {% set time = states('input_select.cycle2_schedule_time') %}
@@ -40,8 +39,7 @@ automation:
               {{ (as_timestamp(now()) + 24 * 3600 ) | timestamp_custom("%Y-%m-%d") }}
             {% endif %}
           time: >
-            {% if trigger.entity_id == 'input_boolean.cycle1_enable' or
-                  trigger.entity_id == 'input_select.cycle1_schedule_time' %}
+            {% if 'cycle1' in trigger.entity_id %}
               {{ states('input_select.cycle1_schedule_time') }}
             {% else %}
               {{ states('input_select.cycle2_schedule_time') }}
@@ -101,6 +99,10 @@ automation:
         data_template:
           cycle: 1
 
+      - service: script.update_next_runtime
+        data_template:
+          cycle: 1
+
   #=== Cycle 2
   - alias: Run Irrigation Cycle 2
     initial_state: 'on'
@@ -122,11 +124,15 @@ automation:
         data_template:
           cycle: 2
 
+      - service: script.update_next_runtime
+        data_template:
+          cycle: 2
 
 #======================
 # Run A Cycle Manually
 #======================
   - alias: Run a Cycle Maually
+    initial_state: 'on'
     trigger:
     - platform: state
       entity_id: 
@@ -199,6 +205,7 @@ automation:
   # Cancel A Manual Cycle
   #=======================
   - alias: Cancel A Manual Cycle
+    initial_state: 'on'
     trigger:
     - platform: state
       entity_id: 
@@ -259,6 +266,7 @@ automation:
   #=== Update the last time an irrigation cycle ended
   #===================================================
   - alias: Update last run time
+    initial_state: 'on'
     trigger:
     - platform: state
       entity_id: group.irrigation_valves
@@ -516,3 +524,24 @@ script:
       - service: switch.turn_off
         data_template:
           entity_id: switch.master_pump
+
+#==================================
+  #=== Script to update next runtime
+  #=== is passed:
+  #===   {{ cycle }}
+  #==================================
+  update_next_runtime:
+    sequence:
+      - service: input_datetime.set_datetime
+        data_template:
+          entity_id: input_datetime.cycle{{ cycle }}_next_run_time
+          date: >
+            {% if states('input_select.cycle' + cycle + '_watering_days') == 'Daily' %}
+              {{ (as_timestamp(now() ) + 24 * 3600 ) | timestamp_custom("%Y-%m-%d") }}
+            {% elif states('input_select.cycle' + cycle + '_watering_days') == 'Alternate' %}  
+              {{ (as_timestamp(now() ) + 48 * 3600 ) | timestamp_custom("%Y-%m-%d") }}
+            {% else %}
+              {{ states('input_datetime.cycle' + cycle + '_next_run_time').split(' ')[0] }}
+            {% endif %}
+          time: >
+            {{ states('input_select.cycle' + cycle + '_schedule_time') }}
