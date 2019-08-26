@@ -295,7 +295,7 @@ sensor:
         friendly_name: "Sensor de Chuva"
         value_template: >-
           {% if is_state('binary_sensor.water_leak_sensor_158d00024bc707', 'off') %}       
-            Sol
+            Tempo Limpo
           {% else %}
             Chuva
           {% endif %}
