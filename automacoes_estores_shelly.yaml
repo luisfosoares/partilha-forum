@@ -1,0 +1,162 @@
+homeassistant:
+
+###############################################################################
+#                                                                             #
+#                           A U T O M A Ç Õ E S                               #
+#                                                                             #
+###############################################################################
+automation:
+
+  - alias: callback estores
+    hide_entity: true
+    trigger:
+      platform: event
+      event_type: telegram_command
+      event_data:
+        command: '/estores'
+    action:
+      - service: notify.telegram
+        data:
+          title: "Posição dos estores"
+          message: "O estore do quarto do quarto pequeno está {{ states('sensor.estore_quarto_pequeno') }} a {{ states('sensor.percentagem_estore_q_pqueno') }} %, o estore do quarto da varanda está {{ states('sensor.estore_quarto_varanda') }} a {{ states('sensor.percentagem_estore_varanda') }} % . Queres abrir ou fechar algum?"
+          data:
+            inline_keyboard:
+              - "Abrir todos os estores:/abrirtodos"
+              - "Fechar q. varanda:/fvaranda, Fechar q. pequeno:/fqpequeno"
+              - "Abrir q. varanda:/avaranda, Abrir q. pequeno:/aqpequeno"
+              - "Fechar todos os estores:/fechartodos"
+
+#fechar estores
+
+  - alias: 'Fechar quarto varanda' 
+    initial_state: true
+    trigger:
+      platform: event
+      event_type: telegram_callback
+      event_data:
+        data: '/fvaranda'            
+    action:
+      - service: cover.set_cover_position
+        data:
+          entity_id: 
+            - cover.estore_varanda_shelly
+          position: 0
+
+  - alias: 'Fechar quarto pequeno' 
+    initial_state: true
+    trigger:
+      platform: event
+      event_type: telegram_callback
+      event_data:
+        data: '/fqpequeno'            
+    action:
+      - service: cover.set_cover_position
+        data:
+          entity_id: 
+            - cover.estore_q_pequeno_shelly
+          position: 0
+
+#abrir estores
+
+  - alias: 'Abrir quarto varanda' 
+    initial_state: true
+    trigger:
+      platform: event
+      event_type: telegram_callback
+      event_data:
+        data: '/avaranda'            
+    action:
+      - service: cover.set_cover_position
+        data:
+          entity_id: 
+            - cover.estore_varanda_shelly
+          position: 100
+
+  - alias: 'Abrir quarto pequeno' 
+    initial_state: true
+    trigger:
+      platform: event
+      event_type: telegram_callback
+      event_data:
+        data: '/aqpequeno'            
+    action:
+      - service: cover.set_cover_position
+        data:
+          entity_id: 
+            - cover.estore_q_pequeno_shelly
+          position: 100
+
+#abrir fechar todos estores
+
+  - alias: 'Abrir todos os estores pai' 
+    initial_state: true
+    trigger:
+      platform: event
+      event_type: telegram_callback
+      event_data:
+        data: '/abrirtodos'            
+    action:
+      - service: cover.set_cover_position
+        data:
+          entity_id: 
+            - cover.estore_q_pequeno_shelly
+            - cover.estore_varanda_shelly
+          position: 100
+
+  - alias: 'Fechar todos os estores pai' 
+    initial_state: true
+    trigger:
+      platform: event
+      event_type: telegram_callback
+      event_data:
+        data: '/fechartodos'            
+    action:
+      - service: cover.set_cover_position
+        data:
+          entity_id: 
+            - cover.estore_q_pequeno_shelly
+            - cover.estore_varanda_shelly
+          position: 0
+
+###############################################################################
+#                                                                             #
+#                               S E N S O R                                   #
+#                                                                             #
+###############################################################################
+#sensores estores para passar a aparecer aberto em vez de open
+sensor:
+  - platform: template
+    sensors:
+      estore_quarto_pequeno:
+        friendly_name: "Estado estore q. pequeno"
+        value_template: >-
+          {% if is_state('cover.estore_q_pequeno_shelly', 'open') %}
+            aberto
+          {% else %}
+            fechado
+          {% endif %}
+
+  - platform: template
+    sensors:
+      estore_quarto_varanda:
+        friendly_name: "Estado estore q. varanda"
+        value_template: >-
+          {% if is_state('cover.estore_varanda_shelly', 'open') %}
+            aberto
+          {% else %}
+            fechado
+          {% endif %}
+
+#percentagem dos estores
+
+  - platform: mqtt
+    name: "percentagem estore varanda"
+    state_topic: "shellies/shellyswitch25-007F28/roller/0/pos"
+    unit_of_measurement: "%"
+    icon: mdi:percent
+
+  - platform: mqtt
+    name: "percentagem estore q pqueno"
+    state_topic: "shellies/shellyswitch25-00AFC3/roller/0/pos"
+    unit_of_measurement: "%"
+    icon: mdi:percent
