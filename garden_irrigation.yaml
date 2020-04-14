@@ -80,7 +80,7 @@ automation:
 
   #=== Cycle 1
   - alias: Run Irrigation Cycle 1
-    initial_state: 'on'
+    initial_state: true
     trigger:
       - platform: time_pattern
         minutes: 00
@@ -91,7 +91,7 @@ automation:
         value_template: >
           {{ now().strftime('%Y-%m-%d %H:%M:00') == states('input_datetime.cycle1_next_run_time') }}
       - condition: state
-        entity_id: input_boolean.cycle1_enable
+        entity_id: 'input_boolean.cycle1_enable'
         state: 'on'
 
     action:
@@ -105,7 +105,7 @@ automation:
 
   #=== Cycle 2
   - alias: Run Irrigation Cycle 2
-    initial_state: 'on'
+    initial_state: true
     trigger:
       - platform: time_pattern
         minutes: 00
@@ -116,7 +116,7 @@ automation:
         value_template: >
           {{ now().strftime('%Y-%m-%d %H:%M:00') == states('input_datetime.cycle2_next_run_time') }}
       - condition: state
-        entity_id: input_boolean.cycle2_enable
+        entity_id: 'input_boolean.cycle2_enable'
         state: 'on'
 
     action:
@@ -132,7 +132,7 @@ automation:
 # Run A Cycle Manually
 #======================
   - alias: Run a Cycle Maually
-    initial_state: 'on'
+    initial_state: true
     trigger:
     - platform: state
       entity_id: 
@@ -205,7 +205,7 @@ automation:
   # Cancel A Manual Cycle
   #=======================
   - alias: Cancel A Manual Cycle
-    initial_state: 'on'
+    initial_state: true
     trigger:
     - platform: state
       entity_id: 
@@ -226,11 +226,6 @@ automation:
 
     - service: homeassistant.turn_off
       entity_id: script.irrigate_a_zone
-
-    # Turn off master irrigation pump
-    - service: switch.turn_off
-      data_template:
-        entity_id: switch.master_pump
 
     # Cancel the timer
     - service: timer.cancel
@@ -266,7 +261,7 @@ automation:
   #=== Update the last time an irrigation cycle ended
   #===================================================
   - alias: Update last run time
-    initial_state: 'on'
+    initial_state: true
     trigger:
     - platform: state
       entity_id: group.irrigation_valves
@@ -284,6 +279,7 @@ automation:
 # Run A Specific Zone Manually
 #======================
   - alias: Irrigation Zone request
+    initial_state: true
     trigger:
       - platform: state
         entity_id:
@@ -346,11 +342,6 @@ script:
         data_template:  
           entity_id: input_boolean.cycle{{ cycle }}_running
 
-      # Turn on master irrigation pump
-      - service: switch.turn_on
-        data_template:
-          entity_id: switch.master_pump
-          
       # wait 3 seconds for good measure to enable pressure in system
       - delay: "00:00:03"
 
@@ -358,7 +349,7 @@ script:
       - service: script.irrigate_a_zone
         data_template:
           cycle: '{{ cycle }}'
-          zone: 1
+          zone: '1'
 
       # Wait for irrigate script to end
       - wait_template: "{{ is_state('script.irrigate_a_zone', 'off') }}"
@@ -367,7 +358,7 @@ script:
       - service: script.irrigate_a_zone
         data_template:
           cycle: '{{ cycle }}'
-          zone: 2
+          zone: '2'
 
       # Wait for script.irrigate_a_zone to end
       - wait_template: "{{ is_state('script.irrigate_a_zone', 'off') }}"
@@ -376,7 +367,7 @@ script:
       - service: script.irrigate_a_zone
         data_template:
           cycle: '{{ cycle }}'
-          zone: 3
+          zone: '3'
 
       # Wait for script.irrigate_a_zone to end
       - wait_template: "{{ is_state('script.irrigate_a_zone', 'off') }}"
@@ -385,7 +376,7 @@ script:
       - service: script.irrigate_a_zone
         data_template:
           cycle: '{{ cycle }}'
-          zone: 4
+          zone: '4'
 
       # Wait for script.irrigate_a_zone to end
       - wait_template: "{{ is_state('script.irrigate_a_zone', 'off') }}"
@@ -399,12 +390,6 @@ script:
       - service: homeassistant.turn_off  
         data_template:
           entity_id: input_boolean.cycle{{ cycle }}_running
-
-      # Turn off master irrigation pump
-      - service: switch.turn_off
-        data_template:
-          entity_id: switch.master_pump
-
 
   #==============================
   #=== Script to irrigate a zone
@@ -494,11 +479,6 @@ script:
         data_template:  
           entity_id: input_boolean.cycle{{ cycle }}_running
 
-      # Turn on master irrigation pump
-      - service: switch.turn_on
-        data_template:
-          entity_id: switch.master_pump
-          
       # wait 3 seconds for good measure to enable pressure in system
       - delay: "00:00:03"
 
@@ -519,11 +499,6 @@ script:
       - service: homeassistant.turn_off  
         data_template:
          entity_id: input_boolean.cycle{{ cycle }}_running
-
-      # Turn off master irrigation pump
-      - service: switch.turn_off
-        data_template:
-          entity_id: switch.master_pump
 
 #==================================
   #=== Script to update next runtime
