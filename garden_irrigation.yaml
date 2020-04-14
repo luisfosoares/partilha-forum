@@ -97,11 +97,11 @@ automation:
     action:
       - service: script.run_a_cycle
         data_template:
-          cycle: 1
+          cycle: '1'
 
       - service: script.update_next_runtime
         data_template:
-          cycle: 1
+          cycle: '1'
 
   #=== Cycle 2
   - alias: Run Irrigation Cycle 2
@@ -122,11 +122,11 @@ automation:
     action:
       - service: script.run_a_cycle
         data_template:
-          cycle: 2
+          cycle: '2'
 
       - service: script.update_next_runtime
         data_template:
-          cycle: 2
+          cycle: '2'
 
 #======================
 # Run A Cycle Manually
@@ -186,9 +186,9 @@ automation:
       data_template:
         cycle: >
           {% if trigger.entity_id == 'input_boolean.cycle1_manual_run' %}
-            1
+            '1'
           {% else %}
-            2
+            '2'
           {% endif %}
     # wait until script is finished
     - wait_template: "{{ is_state('script.run_a_cycle', 'off') }}"
@@ -293,7 +293,7 @@ automation:
       - wait_template: "{{  states('sensor.cycle1_running') == 'Desligado' }}"
       - service: script.irrigate_specific_zone_request
         data_template:
-          cycle: 1
+          cycle: '1'
           zone: >
            {% if trigger.entity_id == 'binary_sensor.zone_1_button' %}
              1
@@ -322,13 +322,13 @@ script:
         data_template:
           entity_id: input_datetime.cycle{{ cycle }}_next_run_time
           date: >
-            {% if states('input_select.cycle' + cycle + '_watering_days') == 'Daily' %}
+            {% if states('input_select.cycle' ~ cycle ~ '_watering_days') == 'Daily' %}
               {{ (as_timestamp(now() ) + 24 * 3600 ) | timestamp_custom("%Y-%m-%d ") }}
             {% else %}  
               {{ (as_timestamp(now() ) + 48 * 3600 ) | timestamp_custom("%Y-%m-%d ") }}
             {% endif %}
           time: >
-              {{ states('input_select.cycle' + cycle + '_schedule_time') }}
+              {{ states('input_select.cycle' ~ cycle ~ '_schedule_time') }}
       # Only continue if no cycle is running
       - condition: state
         entity_id: 'sensor.cycle1_running'
@@ -454,7 +454,7 @@ script:
             {% set duration = states('input_number.cycle' + cycle + '_zone' + zone + '_duration')  | int %}
               00:{{ '%02i' | format(duration) }}:00
       - wait_template: >
-          {% set entity = 'timer.cycle' + cycle + '_zone_duration' %}
+          {% set entity = 'timer.cycle' ~ cycle ~ '_zone_duration' %}
           {{ is_state(entity , 'idle') }}
       - service: switch.turn_off
         data_template:
@@ -511,12 +511,12 @@ script:
         data_template:
           entity_id: input_datetime.cycle{{ cycle }}_next_run_time
           date: >
-            {% if states('input_select.cycle' + cycle + '_watering_days') == 'Daily' %}
+            {% if states('input_select.cycle' ~ cycle ~ '_watering_days') == 'Daily' %}
               {{ (as_timestamp(now() ) + 24 * 3600 ) | timestamp_custom("%Y-%m-%d") }}
-            {% elif states('input_select.cycle' + cycle + '_watering_days') == 'Alternate' %}  
+            {% elif states('input_select.cycle' ~ cycle ~ '_watering_days') == 'Alternate' %}  
               {{ (as_timestamp(now() ) + 48 * 3600 ) | timestamp_custom("%Y-%m-%d") }}
             {% else %}
-              {{ states('input_datetime.cycle' + cycle + '_next_run_time').split(' ')[0] }}
+              {{ states('input_datetime.cycle' ~ cycle ~ '_next_run_time').split(' ')[0] }}
             {% endif %}
           time: >
-            {{ states('input_select.cycle' + cycle + '_schedule_time') }}
+            {{ states('input_select.cycle' ~ cycle ~ '_schedule_time') }}
